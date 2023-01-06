@@ -1,0 +1,132 @@
+-input rom
+-i rom
+    detect version (smb1.nes, smb1.fds, smbann.fds, smb2.fds)
+-input
+-i raw
+    raw level data (forces you to use -a instead of -l, -d)
+-inline data data leveltype
+-n tiledata spritedata
+    inline level data
+-bios
+-b bios
+    fds bios file
+-output
+-o file
+    output file
+-level
+-l level name
+    4-1, 8-2, 36-1 etc.
+        requires detected version
+        for LL, default file is "proper"
+    1-1.1 for sublevel
+-id
+-d level ID
+    $09, $44, etc.
+        requires detected version
+        for LL, default file is "proper" of F1-F3.
+-address
+-a tileaddr spriteaddr leveltype
+    $CBEF, etc.
+-game
+-g game
+    sets the game (if inline or undetected game)
+    (otherwise defaults to smb)
+    "smb" "smbfds" "smbll" "smbann" "vssmb"
+-file
+-f file
+    for smbll only, force loaded file
+
+-second-quest
+    enables second quest
+-no-tiles
+    don't display tiles
+-no-sprites
+    don't display sprites
+-no-block-contents
+    don't show block contents
+-width x
+    set level width to x screens
+-zoom x
+    output image is x times bigger
+-verbose-tiles
+    show icons & data for every tile object
+-verbose-sprites
+    show icons & data for every sprite object
+    
+    
+    LVL  ID   ADDR FILE what to do
+<0>                      loop over all IDs <4>
+<1>                  Y   loop over all IDs <5>
+<2>             Y        force file 1, use ADDR
+<3>             Y    Y   load FILE, use ADDR
+<4>        Y             load preferred file based on id, use ID, then get pointers from level list
+<5>        Y         Y   load FILE, use ID, then get pointers
+<6>        Y    Y        <2>
+<7>        Y    Y    Y   <3>
+<8>   Y                  load file based on world number, then get level ID from world list via requested LVL, then get pointers from level list
+<9>   Y              Y   load file based on world number, then get level ID from world list via requested LVL, then get pointers from level list, then load FILE requested
+<A>   Y         Y        <2>
+<B>   Y         Y    Y   <3>
+<C>   Y    Y             <4>
+<D>   Y    Y         Y   <5>
+<E>   Y    Y    Y        <2>
+<F>   Y    Y    Y    Y   <3>
+
+first check ADDR
+then check ID
+check LVL
+
+
+all of the stupid shit
+
+hard level flag (e.g. 5-3)
+    enables certain enemies
+    makes lifts short
+        castles also make lifts short
+second quest flag
+    hard level flag on even on early levels
+    goombas -> buzzy beetles
+8-4 flag for peach instead of toad
+background color
+    if snow -> blue
+    else
+        if underground or castle (type) or night or night+snow or castle (backdrop) -> black
+        else -> blue
+castle backdrop
+    palette -> 3
+snow or snow+night backdrop
+    green palette -> 5
+mushroom specplat
+    green palette -> 4
+specplast = 3 ?
+    cloud sprite lifts
+    cloud floor pattern and gaps
+hole
+    writes empty tile
+    writes water tile if level type is underwater
+floor pattern
+    cloud gap and missing bottom row
+    underground bricks
+    water levels in world 8 specifically use castle tiles
+    
+literally anything that uses RenderUnderPart routine
+    mushroom stem (not the top part)
+    tree trunk
+    pipe (full shaft only)
+    hole (with and without water)
+    bridge (floor only)
+    flag balls (all)
+    flagpole (pole part only)
+    lift vertical rope (all of rope and even the empty space under the pully rope)
+    bullet bill cannon (plain shaft only)
+    staircase
+        if tile is empty -> overwrite
+        if tile is middle tree -> skip it
+        if tile is middle mushroom -> skip it
+        if tile is coin ? block -> overwrite
+        if tile uses palette 3 (shiny) -> skip it
+            other ? blocks (flower, poison)
+            coin, water coin, axe, used block
+        if tile is not dirt -> overwrite
+        if writing mushroom stem trunk -> skip it
+        else -> overwrite
