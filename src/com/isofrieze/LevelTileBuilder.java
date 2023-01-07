@@ -180,6 +180,9 @@ public class LevelTileBuilder {
 		// flag to help with drawing objects with next screen flag properly
 		boolean processNextScreenObject = false;
 		
+		// flag for the special case of getting locked up on a screen jump with the next screen flag set
+		boolean stuckOnNextScreenScreenJump = false;
+		
 		// the object queue
 		Queue queue = new Queue();
 
@@ -194,37 +197,42 @@ public class LevelTileBuilder {
 			
 			// if this is the first column of a screen, set up the new screen
 			if (xExtent > 0 && xExtent % 0x10 == 0) {
+				// if were stuck on a malfunctioning screen jump object, skip it now
+				if (stuckOnNextScreenScreenJump) {
+					offset += 2;
+					stuckOnNextScreenScreenJump = false;
+				}
 				
 				// skip ahead to the next object with the next screen flag set
 				while (memory.read8(dataBasePointer + offset) != 0xFD && // while not end of data
 					memory.readBits(dataBasePointer + offset + 1, 0x80) == 0 && // while not next screen
 						!(memory.readBits(dataBasePointer + offset, 0x0F) == 13 && // while not screen jump
-						memory.getBits(dataBasePointer + offset + 1, 0x40) == 0)) {
+						memory.readBits(dataBasePointer + offset + 1, 0x40) == 0)) {
 					
-					addObjectToList(xExtent, offset);
+					addObjectToList((xExtent / 0x10) - 1, offset);
 					offset += 2; // TODO preprocess queue here!
 				}
 				
 				// if the next tile object is a screen jump 
 				if (memory.read8(dataBasePointer + offset) != 0xFD &&
-						memory.getBits(dataBasePointer + offset, 0x0F) == 13 &&
-						memory.getBits(dataBasePointer + offset + 1, 0x40) == 0) {
+						memory.readBits(dataBasePointer + offset, 0x0F) == 13 &&
+						memory.readBits(dataBasePointer + offset + 1, 0x40) == 0) {
 					
 					// if this screen jump has the next screen flag set, it doesn't actually jump screens
-					// so we just skip over the object
-					if (memory.getBits(dataBasePointer + offset + 1, 0x80) == 1) {
-						addObjectToList(xExtent, offset);
-						offset += 2;
+					// it actually locks up this screen
+					if (memory.readBits(dataBasePointer + offset + 1, 0x80) == 1) {
+						addObjectToList(memory.readBits(dataBasePointer + offset + 1, 0x1F), offset);
+						stuckOnNextScreenScreenJump = true;
 						
 					// otherwise it does screen jump
 					// determine if the screen we are on is jumped over or not
 					} else {
 						int currentScreen = xExtent >> 4;
-						int jumpTo = memory.getBits(dataBasePointer + offset + 1, 0x1F);
+						int jumpTo = memory.readBits(dataBasePointer + offset + 1, 0x1F);
 						
 						if (currentScreen == jumpTo) {
 							// we are at the target screen, so we can finally skip this object
-							addObjectToList(xExtent, offset);
+							addObjectToList(jumpTo, offset);
 							offset += 2;
 							
 						} else if (currentScreen > jumpTo) {
@@ -232,9 +240,9 @@ public class LevelTileBuilder {
 							// this means this was a backwards jump, so we need to skip forward
 							// in the level data to account for the screens that will not be processed
 							while (memory.read8(dataBasePointer) != 0xFD && jumpTo < currentScreen) {
-								addObjectToList(xExtent, offset);
+								addObjectToList(jumpTo, offset);
 								offset += 2;
-								if (memory.getBits(dataBasePointer + offset + 1, 0x80) == 1)
+								if (memory.readBits(dataBasePointer + offset + 1, 0x80) == 1)
 									jumpTo++;
 							}
 						}
@@ -261,7 +269,7 @@ public class LevelTileBuilder {
 				if (queue.isFull()) break;
 				
 				// otherwise, add the object to the queue
-				TileObject object = addObjectToList(xExtent, offset);
+				TileObject object = addObjectToList(xExtent / 0x10, offset);
 				queue.addObject(object);
 				offset += 2;
 			}
@@ -752,25 +760,26 @@ public class LevelTileBuilder {
 					}
 					case 7: return 2; // pipe
 					case 0: { // powerup blocks et al
-						if ((SMBLevelDrawer.game == Game.LOST_LEVELS ||
-								SMBLevelDrawer.game == Game.ALL_NIGHT_NIPPON) &&
-								memory.getBits(object.b, 0x0F) == 0xC)
-							return 4; // L pipe TODO double check this in ANN
+						
+						// check for L pipe
+						if (remapPowerupBlocks[SMBLevelDrawer.game.getNum()]
+								[memory.getBits(object.b, 0x0F)] == 16)
+							return 4;
 					}
 					default: return 1;
 				}
 			}
 		}
 	}
-	
-	// TODO don't add x pos of xExtent, but the true x position of the object
-	
-	private TileObject addObjectToList(int x, int offset) {
+
+	private TileObject addObjectToList(int screen, int offset) {
 		int a = memory.read8(dataBasePointer + offset);
 		int b = memory.read8(dataBasePointer + offset + 1);
+		int x = memory.getBits(a, 0xF0);
 		int y = memory.getBits(a, 0x0F);
+		int fullXPosition = 0x10 * screen + x;
 		
-		TileObject object = new TileObject(a, b, x, y);
+		TileObject object = new TileObject(a, b, fullXPosition, y);
 		tileObjectList.add(object);
 		return object;
 	}

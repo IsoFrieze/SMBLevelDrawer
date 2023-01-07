@@ -143,8 +143,12 @@ public class LevelSpriteBuilder {
 				
 				// sprite only spawns if it is within the loading zone (about a 4 column wide area)
 				// and if either hard mode is enabled or the sprite's flag is not set
-				if (globalXPos >= xExtent - 4 && (HARD_MODE || hardMode == 0))
+				if (globalXPos >= xExtent - 4 && (HARD_MODE || hardMode == 0)) {
+					
 					addApplicableDisplaySprites(spriteType, 16 * globalXPos, 16 * yPos);
+					xExtent = globalXPos;
+				}
+					
 			}
 			
 			spriteList.add(sprite);
@@ -162,7 +166,7 @@ public class LevelSpriteBuilder {
 			case 0x03: addDisplaySprite(Sprite.RED_KOOPA, x, y); break;
 			case 0x04: addDisplaySprite(Sprite.GREEN_KOOPA, x, y); break; // green koopa that stands still
 			case 0x05: addDisplaySprite(Sprite.HAMMER_BRO, x, y); break;
-			case 0x06: addDisplaySprite(Sprite.GOOMBA, x, y); break;
+			case 0x06: addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x, y); break;
 			case 0x07: addDisplaySprite(Sprite.BLOOPER, x, y); break;
 			case 0x08: addDisplaySprite(Sprite.BULLET_BILL, x, y); break;
 			case 0x09: addDisplaySprite(Sprite.GREEN_PARAKOOPA, x, y); break; // green parakoopa that stands still
@@ -267,17 +271,17 @@ public class LevelSpriteBuilder {
 			}
 			// case 0x36: // CRASH likely
 			case 0x38:
-				addDisplaySprite(Sprite.GOOMBA, x, 0xB0);
+				addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x, 0xB0);
 			case 0x37: {
-				addDisplaySprite(Sprite.GOOMBA, x-0x18, 0xB0);
-				addDisplaySprite(Sprite.GOOMBA, x-0x30, 0xB0);
+				addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x-0x18, 0xB0);
+				addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x-0x30, 0xB0);
 				break;
 			}
 			case 0x3A:
-				addDisplaySprite(Sprite.GOOMBA, x, 0x70);
+				addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x, 0x70);
 			case 0x39: {
-				addDisplaySprite(Sprite.GOOMBA, x-0x18, 0x70);
-				addDisplaySprite(Sprite.GOOMBA, x-0x30, 0x70);
+				addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x-0x18, 0x70);
+				addDisplaySprite(SECOND_QUEST ? Sprite.BUZZY_BEETLE : Sprite.GOOMBA, x-0x30, 0x70);
 				break;
 			}
 			case 0x3C:
