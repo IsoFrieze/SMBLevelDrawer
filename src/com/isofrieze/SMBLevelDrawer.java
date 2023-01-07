@@ -149,6 +149,9 @@ public class SMBLevelDrawer {
 		// if we didn't detect a game, but the user supplied one, use that
 		if (game == Game.NONE) game = REQUESTED_GAME;
 		
+		// load in resources
+		ssm.initialize();
+		
 		// TODO if all requested things are not present, loop over all level numbers a-b.c
 		
 		{
@@ -195,6 +198,9 @@ public class SMBLevelDrawer {
 			spriteBuilder.addSpontaneousSprites(tileBuilder.getComboSprites());
 			spriteBuilder.build();
 			
+			// now that the level has been processed, we can prepare things to be drawn with the correct palettes
+			ssm.setPalettes();
+			
 			// print the level data
 			BufferedImage tileImage = tileBuilder.print();
 			BufferedImage spriteImage = spriteBuilder.print();
@@ -211,11 +217,6 @@ public class SMBLevelDrawer {
 			} catch (IOException e) {
 				System.err.println("Error writing the output file!");
 				e.printStackTrace();
-			}
-			
-			for (int i = 0; i < tileBuilder.displayedTiles.size(); i++) {
-				TileInstance t = tileBuilder.displayedTiles.get(i);
-				System.out.printf("(%d,%d) %s%n", t.x, t.y, t.tile.name());
 			}
 		}
 	}
@@ -290,7 +291,7 @@ public class SMBLevelDrawer {
 					SPRITES = false;
 					break;
 				case "-no-block-contents":
-					LevelTileBuilder.CONTENTS = false;
+					SpriteSheetManager.CONTENTS = false;
 					break;
 				case "-width":
 					i++;
@@ -365,7 +366,12 @@ public class SMBLevelDrawer {
 			// note that ANN doesn't have a world 9, so file 3 can't be default
 			} else {
 				String requestedWorld = REQUESTED_LEVEL.substring(REQUESTED_LEVEL.indexOf("-"));
-				if (!Character.isDigit(REQUESTED_LEVEL.charAt(0))) return 4;
+				if (requestedWorld.indexOf('.') >= 0)
+					requestedWorld = requestedWorld.substring(0, requestedWorld.indexOf('.'));
+				
+				if (!Character.isDigit(REQUESTED_LEVEL.charAt(0)))
+					return 4;
+				
 				int world = Integer.parseInt(requestedWorld);
 				return world <= 4 ? 1 : world <= 8 || game == Game.ALL_NIGHT_NIPPON ? 2 : 3;
 			}
@@ -582,7 +588,7 @@ public class SMBLevelDrawer {
 						int levelId = memory.read8(worldNumberIndices[game.getNum()][1] + levelIndex);
 						int[] pointersForThatLevel = getPointersFromLevelID(file, levelId);
 						
-						// check the Mario starting position bits (6 or 7 = autowalk)
+						// check the Mario starting position bits (6 or 7 = autowalk) TODO apparently LL uses 7 for something else
 						int marioStartPosition = memory.readBits(pointersForThatLevel[0], 0x1C);
 						if (skipAutowalkLevels = (marioStartPosition >= 6)) {
 							levelIndex++;
