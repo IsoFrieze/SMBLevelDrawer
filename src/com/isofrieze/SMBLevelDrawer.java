@@ -227,23 +227,27 @@ public class SMBLevelDrawer {
 
 		// build the level's tile data
 		LevelTileBuilder tileBuilder = new LevelTileBuilder(levelDataPointers[0], type);
-		tileBuilder.build();
+		int levelTileWidth = tileBuilder.build();
 		
 		// build the level's sprite data
 		LevelSpriteBuilder spriteBuilder = new LevelSpriteBuilder(levelDataPointers[1], type, tileBuilder.isCloudy());
 		// get some sprite info from the tile data
 		spriteBuilder.addSpontaneousSprites(tileBuilder.getComboSprites());
-		spriteBuilder.build();
+		int levelSpriteWidth = 9 + spriteBuilder.build();
 		
 		// now that the level has been processed, we can prepare things to be drawn with the correct palettes
 		ssm.setPalettes();
 		
+		// the level width is the greater of the size of the tiles and sprites
+		int imageWidth = (levelTileWidth > levelSpriteWidth ? levelTileWidth : levelSpriteWidth);
+		
 		// print the level data
-		BufferedImage tileImage = tileBuilder.print();
-		BufferedImage spriteImage = spriteBuilder.print();
+		BufferedImage tileImage = tileBuilder.print(imageWidth);
+		BufferedImage spriteImage = spriteBuilder.print(imageWidth);
 		
 		// create the final image
-		BufferedImage finalImage = new BufferedImage(tileImage.getWidth(), tileImage.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+		int imageHeight = ((LevelTileBuilder.VERBOSE_TILES || LevelSpriteBuilder.VERBOSE_SPRITES) ? 17 : 14);
+		BufferedImage finalImage = new BufferedImage(16 * imageWidth, 16 * imageHeight, BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics2D g = (Graphics2D)finalImage.getGraphics();
 		if (TILES) g.drawImage(tileImage, 0, 0, null);
 		if (SPRITES) g.drawImage(spriteImage, 0, 0, null);

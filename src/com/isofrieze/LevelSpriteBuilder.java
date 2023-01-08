@@ -80,7 +80,8 @@ public class LevelSpriteBuilder {
 	// build the level's sprites
 	// 1) create a list of sprites that are drawn to the level for the output image
 	// 2) create a technical list of all sprites in the level for verbose markers
-	public void build() {
+	// 3) return the width of the level (position of last sprite)
+	public int build() {
 		// offset into the sprite data
 		int offset = 0;
 		
@@ -157,6 +158,7 @@ public class LevelSpriteBuilder {
 			spriteList.add(sprite);
 		}
 		
+		return xExtent;
 	}
 
 	// add the corresponding graphic to the list of sprites to draw
@@ -315,8 +317,8 @@ public class LevelSpriteBuilder {
 		displayedSprites.add(SMBLevelDrawer.ssm.new SpriteInstance(sprite, x, y));
 	}
 	
-	public BufferedImage print() {
-		BufferedImage img = new BufferedImage(16*16*16,16*17,BufferedImage.TYPE_4BYTE_ABGR);
+	public BufferedImage print(int width) {
+		BufferedImage img = new BufferedImage(16*width,16*17,BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics2D g = (Graphics2D)img.getGraphics();
 		
 		for (int i = 0; i < displayedSprites.size(); i++) {

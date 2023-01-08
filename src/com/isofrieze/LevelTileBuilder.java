@@ -198,8 +198,12 @@ public class LevelTileBuilder {
 			return true;
 		}
 	}
-	
-	public void build() {
+
+	// build the level's tile objects
+	// 1) create a list of tile that are drawn to the level for the output image
+	// 2) create a technical list of all tile objects in the level for verbose markers
+	// 3) return the width of the level (last column of last object)
+	public int build() {
 		int[] terrain = processLevelHeader();
 		
 		// offset into the tile data
@@ -216,9 +220,15 @@ public class LevelTileBuilder {
 		
 		// the object queue
 		Queue queue = new Queue();
+		
+		// number of columns to draw after the last object
+		int BUFFER_SIZE = 16;
+		int endBuffer = BUFFER_SIZE;
 
-		//TODO looping offset
-		while (offset < 0x100 && !(memory.read8(dataBasePointer + offset) == 0xFD && queue.isEmpty())) {
+		// TODO looping offset
+		while (offset < 0x100 && endBuffer >= 0) {
+			if (memory.read8(dataBasePointer + offset) == 0xFD && queue.isEmpty()) endBuffer--;
+			
 			// start with an empty column of tiles, and fill it in as we go
 			Tile [] column = new Tile[13];
 			
@@ -327,6 +337,10 @@ public class LevelTileBuilder {
 			// move to the next column
 			xExtent++;
 		}
+		
+		// otherwise just return the last column of the last object + 2
+		// this makes big castles at the end of levels look good c:
+		return xExtent - BUFFER_SIZE + 1;
 	}
 	
 	private void processTheQueue(int x, Queue queue, Tile[] column, int[] terrain) {
@@ -1078,12 +1092,12 @@ public class LevelTileBuilder {
 		"  i++I+++{}"
 	};
 	
-	public BufferedImage print() {
-		BufferedImage img = new BufferedImage(16*16*16,16*17,BufferedImage.TYPE_4BYTE_ABGR);
+	public BufferedImage print(int width) {
+		BufferedImage img = new BufferedImage(16*width,16*17,BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics2D g = (Graphics2D)img.getGraphics();
 		
 		g.setBackground(SMBLevelDrawer.ssm.getBackgroundColor());
-		g.clearRect(0, 0, 16*16*16, 16*14);
+		g.clearRect(0, 0, 16*width, 16*14);
 		
 		for (int i = 0; i < displayedTiles.size(); i++) {
 			SMBLevelDrawer.ssm.drawTile(g, displayedTiles.get(i));
