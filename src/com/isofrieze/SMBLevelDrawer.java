@@ -112,7 +112,7 @@ public class SMBLevelDrawer {
 	}
 	
 	public static void main(String[] args) {
-		args = fakeArguments();
+		// args = fakeArguments();
 		
 		String[] filenames = processArguments(args);
 		
@@ -220,10 +220,10 @@ public class SMBLevelDrawer {
 		// the type of level (water, castle, etc.)
 		LevelType type = LevelType.getType(REQUESTED_LEVEL_TYPE >= 0 ? REQUESTED_LEVEL_TYPE : (REQUESTED_ID & 0x60) >> 5);
 		
-		System.out.printf("detectedGame = %s%n", game.name());
-		System.out.printf("REQUESTED_LEVEL = %s (%d | %d | %d)%n", REQUESTED_LEVEL, MY_WORLD, MY_LEVEL, MY_SUBLEVEL);
-		System.out.printf("REQUESTED_ID = 0x%x, REQUESTED_FILE = %d%n", REQUESTED_ID, REQUESTED_FILE);
-		System.out.printf("TILE_ADDRESS = 0x%x, SPRITE_ADDRESS = 0x%x, LEVEL_TYPE = %s%n", levelDataPointers[0], levelDataPointers[1], type.name());
+		// System.out.printf("detectedGame = %s%n", game.name());
+		// System.out.printf("REQUESTED_LEVEL = %s (%d | %d | %d)%n", REQUESTED_LEVEL, MY_WORLD, MY_LEVEL, MY_SUBLEVEL);
+		// System.out.printf("REQUESTED_ID = 0x%x, REQUESTED_FILE = %d%n", REQUESTED_ID, REQUESTED_FILE);
+		// System.out.printf("TILE_ADDRESS = 0x%x, SPRITE_ADDRESS = 0x%x, LEVEL_TYPE = %s%n", levelDataPointers[0], levelDataPointers[1], type.name());
 		
 		// the sprites need to know if the tile data header says the level should be cloudy
 		boolean isCloudy = memory.readBits(levelDataPointers[0] + 1, 0xC0) == 3;
@@ -243,7 +243,7 @@ public class SMBLevelDrawer {
 		ssm.setPalettes();
 		
 		// print the level data
-		if (WIDTH >= 0) levelWidth = WIDTH;
+		if (WIDTH >= 0) levelWidth = 0x100 * WIDTH;
 		BufferedImage tileImage = tileBuilder.print(levelWidth);
 		BufferedImage spriteImage = spriteBuilder.print(levelWidth);
 		
