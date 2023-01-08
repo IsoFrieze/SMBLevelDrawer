@@ -365,9 +365,7 @@ public class SMBLevelDrawer {
 			// default to "proper" file based on world number
 			// note that ANN doesn't have a world 9, so file 3 can't be default
 			} else {
-				String requestedWorld = REQUESTED_LEVEL.substring(REQUESTED_LEVEL.indexOf("-"));
-				if (requestedWorld.indexOf('.') >= 0)
-					requestedWorld = requestedWorld.substring(0, requestedWorld.indexOf('.'));
+				String requestedWorld = REQUESTED_LEVEL.substring(0, REQUESTED_LEVEL.indexOf("-"));
 				
 				if (!Character.isDigit(REQUESTED_LEVEL.charAt(0)))
 					return 4;
@@ -588,7 +586,7 @@ public class SMBLevelDrawer {
 						int levelId = memory.read8(worldNumberIndices[game.getNum()][1] + levelIndex);
 						int[] pointersForThatLevel = getPointersFromLevelID(file, levelId);
 						
-						// check the Mario starting position bits (6 or 7 = autowalk) TODO apparently LL uses 7 for something else
+						// check the Mario starting position bits (6 or 7 = autowalk)
 						int marioStartPosition = memory.readBits(pointersForThatLevel[0], 0x1C);
 						if (skipAutowalkLevels = (marioStartPosition >= 6)) {
 							levelIndex++;

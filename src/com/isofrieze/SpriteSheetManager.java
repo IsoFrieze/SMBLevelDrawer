@@ -87,22 +87,47 @@ public class SpriteSheetManager {
 		}
 	}
 	
+	// (x position, y position, width, height, palette, origin x, origin y)
+	// according to the spritesheet
 	public enum Sprite {
-		GREEN_KOOPA, RED_KOOPA, BUZZY_BEETLE, HAMMER_BRO,
-		GOOMBA, BLOOPER, BULLET_BILL, GREEN_CHEEP_CHEEP,
-		RED_CHEEP_CHEEP, PODOBOO, GREEN_PIRANHA_PLANT,
-		UPSIDE_DOWN_GREEN_PIRANHA_PLANT, RED_PIRANHA_PLANT,
-		UPSIDE_DOWN_RED_PIRANHA_PLANT, GREEN_PARAKOOPA,
-		RED_PARAKOOPA, LAKITU, SPINY, SPINY_EGG,
-		BOWSER_FIREBALL, FIREWORK, FIREBAR, LONG_FIREBAR,
-		SHORT_LIFT, MEDIUM_LIFT, LONG_LIFT,
-		SHORT_CLOUDS, MEDIUM_CLOUDS, LONG_CLOUDS,
-		BOWSER, SUPER_MUSHROOM, POISON_MUSHROOM, LIFE_MUSHROOM,
-		FIRE_FLOWER, SUPER_STAR, VINE, COIN, WIND,
-		FLAGPOLE_FLAG, CASTLE_FLAG, RED_SPRINGBOARD,
-		GREEN_SPRINGBOARD, TOAD, PEACH, DOOR,
-		ANN_NPC_1, ANN_NPC_2, ANN_NPC_3, ANN_NPC_4,
-		ANN_NPC_5, ANN_NPC_6, ANN_NPC_7, ANN_NPC_8;
+		GREEN_KOOPA(0,8,2,3,1,0,8), RED_KOOPA(0,18,2,3,2,0,8), BUZZY_BEETLE(2,0,2,2,0,0,0), HAMMER_BRO(0,11,2,3,1,0,8),
+		GOOMBA(0,0,2,2,0,0,0), BLOOPER(4,0,2,3,0,0,8), BULLET_BILL(6,0,2,2,0,0,0), GREEN_CHEEP_CHEEP(2,12,2,2,1,0,0),
+		RED_CHEEP_CHEEP(8,18,2,2,2,0,0), PODOBOO(10,18,2,2,2,0,0), GREEN_PIRANHA_PLANT(4,8,2,3,1,-8,8),
+		UPSIDE_DOWN_GREEN_PIRANHA_PLANT(4,11,2,3,1,-8,0), RED_PIRANHA_PLANT(4,18,2,3,2,-8,8),
+		UPSIDE_DOWN_RED_PIRANHA_PLANT(4,21,2,3,2,-8,0), GREEN_PARAKOOPA(2,8,2,3,1,0,8),
+		RED_PARAKOOPA(2,18,2,3,2,0,8), LAKITU(6,8,2,3,1,0,8), SPINY(10,16,2,2,2,0,0), SPINY_EGG(8,16,2,2,2,0,0),
+		BOWSER_FIREBALL(1,21,3,1,2,0,0), FIREWORK(20,18,2,2,2,0,0), FIREBAR(6,16,1,6,2,-4,12), LONG_FIREBAR(6,16,1,6,2,-4,12),
+		SHORT_LIFT(0,16,3,1,2,-12,15), MEDIUM_LIFT(0,16,4,1,2,0,15), LONG_LIFT(0,16,6,1,2,0,15),
+		SHORT_CLOUDS(0,17,3,1,2,-12,15), MEDIUM_CLOUDS(0,17,4,1,2,0,15), LONG_CLOUDS(0,17,6,1,2,0,15),
+		BOWSER(8,8,4,4,1,0,16), SUPER_MUSHROOM(18,18,2,2,2,0,0), POISON_MUSHROOM(8,0,2,2,0,0,0), LIFE_MUSHROOM(16,10,2,2,1,0,0),
+		FIRE_FLOWER(16,8,2,2,1,0,0), SUPER_STAR(18,16,2,2,2,0,0), VINE(14,10,2,2,1,0,0), COIN(18,20,2,2,2,0,0),
+		WIND(12,8,2,1,1,0,0), FLAGPOLE_FLAG(14,8,2,2,1,8,-1), CASTLE_FLAG(20,16,2,2,2,0,0), RED_SPRINGBOARD(16,17,2,3,2,0,-1),
+		GREEN_SPRINGBOARD(12,9,2,3,1,0,-1), TOAD(12,17,2,3,2,0,8), PEACH(14,17,2,3,2,0,8), DOOR(14,20,2,3,2,0,8),
+		ANN_NPC_1(0,24,2,3,2,0,8), ANN_NPC_2(2,24,2,3,2,0,8), ANN_NPC_3(4,24,2,3,2,0,8), ANN_NPC_4(6,24,2,3,2,0,8),
+		ANN_NPC_5(8,24,2,3,2,0,8), ANN_NPC_6(10,24,2,3,2,0,8), ANN_NPC_7(12,24,2,3,2,0,8), ANN_NPC_8(14,24,2,3,2,0,8),
+		ANN_NPC_9(12,20,2,3,2,0,8);
+
+		// the position of the sprite in the sprite sheet
+		int x, y;
+		
+		// the size of the sprite in the sprite sheet
+		int w, h;
+		
+		// the origin of this sprite in pixels relative to its top left corner
+		int ox, oy;
+		
+		// the palette this sprite uses
+		int palette;
+		
+		Sprite(int x, int y, int w, int h, int palette, int ox, int oy) {
+			this.x = 8 * x;
+			this.y = 8 * y;
+			this.w = 8 * w;
+			this.h = 8 * h;
+			this.ox = ox;
+			this.oy = oy;
+			this.palette = palette;
+		}
 	}
 	
 	public class SpriteInstance {
@@ -118,8 +143,7 @@ public class SpriteSheetManager {
 		}
 	}
 	
-	private BufferedImage tilesUncolored, spritesUncolored, palettes;
-	private BufferedImage tiles, sprites;
+	private BufferedImage tiles, sprites, palettes;
 	private PaletteModifier tilePaletteModifier;
 	private LevelType mainPalette;
 	private boolean isNight;
@@ -141,8 +165,8 @@ public class SpriteSheetManager {
 		String s = SMBLevelDrawer.game.getAbbreviation();
 		
 		try {
-			tilesUncolored = ImageIO.read(new File("res/"+s+"/tiles.png"));
-			spritesUncolored = ImageIO.read(new File("res/"+s+"/sprites.png"));
+			tiles = ImageIO.read(new File("res/"+s+"/tiles.png"));
+			sprites = ImageIO.read(new File("res/"+s+"/sprites.png"));
 			palettes = ImageIO.read(new File("res/palettes.png"));
 		} catch (IOException e) {
 			System.err.println("Couldn't load spritesheets!");
@@ -187,19 +211,28 @@ public class SpriteSheetManager {
 		spritePalettes = new Color[3][4];
 		for (int i = 0; i < spritePalettes.length; i++) {
 			for (int j = 0; j < spritePalettes[i].length; j++) {
-				spritePalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 * mainPalette.getNum() + j), 0x10 * (8 + i)));
+				// colors are swapped on the sprite sheet because I think it looks better
+				int k = (j % 3) + 1;
+				
+				spritePalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 * mainPalette.getNum() + k), 0x10 * (8 + i)));
 			}
 		}
 		
 		bowserPalette = new Color[4];
 		for (int i = 0; i < bowserPalette.length; i++) {
-			bowserPalette[i] = new Color(palettes.getRGB(0x10 * (4 + i), 0x10 * 9));
+			// colors are swapped on the sprite sheet because I think it looks better
+			int k = (i % 3) + 1;
+			
+			bowserPalette[i] = new Color(palettes.getRGB(0x10 * (4 + k), 0x10 * 9));
 		}
 		
 		celebPalettes = new Color[4][4];
 		for (int i = 0; i < celebPalettes.length; i++) {
 			for (int j = 0; j < celebPalettes[i].length; j++) {
-				celebPalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 + j), 0x10 * (12 + i)));
+				// colors are swapped on the sprite sheet because I think it looks better
+				int k = (i % 3) + 1;
+				
+				celebPalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 + k), 0x10 * (12 + i)));
 			}
 		}
 		
@@ -251,99 +284,64 @@ public class SpriteSheetManager {
 	}
 	
 	private BufferedImage getTileFromSheet(Tile tile) {
-		BufferedImage img = new BufferedImage(0x10, 0x10, BufferedImage.TYPE_4BYTE_ABGR);
-		
-		for (int i = 0; i < img.getWidth(); i++) {
-			for (int j = 0; j < img.getHeight(); j++) {
-				img.setRGB(i, j, tilesUncolored.getRGB(tile.x + i, tile.y + j));
-			}
-		}
-		
-		return img;
+		return getGraphicsAndRecolor(tiles, tile.x, tile.y, 0x10, 0x10, tilePalettes[tile.palette]);
 	}
 
 	// draw the sprite to the image associated with this graphics object
-	// TODO offset sprites positions properly
 	public void drawSprite(Graphics2D g, SpriteInstance sprite) {
-		g.drawImage(getSpriteFromSheet(sprite.sprite), sprite.x, sprite.y, null);
+		g.drawImage(getSpriteFromSheet(sprite.sprite), sprite.x - sprite.sprite.ox, sprite.y - sprite.sprite.oy, null);
+		
+		// the big firebar is so big that it's two sprites (my spritesheet is too smol)
+		// TODO maybe handle all sprites that use multiple of the same graphic like this
+		// (firebars, lifts)
+		if (sprite.sprite == Sprite.LONG_FIREBAR) {
+			g.drawImage(getSpriteFromSheet(sprite.sprite), sprite.x - sprite.sprite.ox, sprite.y - sprite.sprite.oy + 48, null);
+		}
 	}
 	
 	private BufferedImage getSpriteFromSheet(Sprite sprite) {
-		BufferedImage img = new BufferedImage(0x10, 0x10, BufferedImage.TYPE_4BYTE_ABGR);
+		Color[] palette = spritePalettes[sprite.palette];
 		
-		
-		
-		return img;
+		// bowser always uses the bright green palette regardless of level setting
+		// TODO except not always? Only the real bowser on the bridge? I think it may actually be the bridge
+		// or axe or something that changes the palette, in that case oof
+		if (sprite == Sprite.BOWSER)
+			palette = bowserPalette;
+			
+		// the ANN celebs use special hardcoded palettes
+		else if (sprite == Sprite.ANN_NPC_1 || sprite == Sprite.ANN_NPC_4 || sprite == Sprite.ANN_NPC_8)
+			palette = celebPalettes[0]; 
+		else if (sprite == Sprite.ANN_NPC_2 || sprite == Sprite.ANN_NPC_5)
+			palette = celebPalettes[1]; 
+		else if (sprite == Sprite.ANN_NPC_3 || sprite == Sprite.ANN_NPC_6)
+			palette = celebPalettes[2]; 
+		else if (sprite == Sprite.ANN_NPC_7)
+			palette = celebPalettes[3]; 
+			
+		return getGraphicsAndRecolor(sprites, sprite.x, sprite.y, sprite.w, sprite.h, palette);
 	}
 	
-	public void setTilePalette(LevelType tilePalette, PaletteModifier tilePaletteModifier) {
-		Color[][] colors = new Color[4][3];
-		
-		for (int i = 0; i < colors.length; i++) {
-			for (int j = 0; j < colors[i].length; j++) {
-				// Grab colors from palettes.png
-				colors[i][j] = new Color(palettes.getRGB(0x40*tilePalette.getNum() + 0x10*j + 0x08, 0x10*i + 0x08));
-			}
-		}
-		
-		// Overwrite tile palette 1 if orange or snow
-		if (tilePaletteModifier == PaletteModifier.ORANGE) {
-			for (int i = 0; i < colors[1].length; i++) {
-				colors[1][i] = new Color(palettes.getRGB(0x10*i + 0x48, 0x58));
-			}
-		} else if (tilePaletteModifier == PaletteModifier.SNOW) {
-			for (int i = 0; i < colors[1].length; i++) {
-				colors[1][i] = new Color(palettes.getRGB(0x10*i + 0x48, 0x68));
-			}
-		}
-		
-		tiles = new BufferedImage(tilesUncolored.getWidth(), tilesUncolored.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-		
-		for (int y = 0; y < tiles.getHeight(); y++) {
-			for (int x = 0; x < tiles.getWidth(); x++) {
+	// given a grayscale source image and a bounding rectangle and palette
+	// apply the palette and return that rectangle
+	public BufferedImage getGraphicsAndRecolor(BufferedImage src, int x, int y, int width, int height, Color[] palette) {
+		BufferedImage out = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
 				// get the raw grayscale color from the spritesheet
-				int raw = tilesUncolored.getRGB(x, y);
+				int raw = src.getRGB(x + i, y + j);
 				
 				// if the pixel is not transparent
 				if (raw < 0) {
 					// figure out what index it should be
-					int idx = raw == -0x01000000 ? 2 : raw == -1 ? 0 : 1;
+					int idx = raw == -0x01000000 ? 3 : raw == -1 ? 1 : 2;
 					
 					// use that index into the color palette and write to the colored image
-					tiles.setRGB(x, y, colors[y/0x40][idx].getRGB());
+					out.setRGB(i, j, palette[idx].getRGB());
 				}
 			}
 		}
-	}
-	
-	public void setSpritePalette(LevelType spritePalette) {		
-		Color[][] colors = new Color[4][3];
 		
-		for (int i = 0; i < colors.length; i++) {
-			for (int j = 0; j < colors[i].length; j++) {
-				// Grab colors from palettes.png
-				colors[i][j] = new Color(palettes.getRGB(0x40*spritePalette.getNum() + 0x10*j + 0x08, 0x10*i + 0x88));
-			}
-		}
-		
-		sprites = new BufferedImage(spritesUncolored.getWidth(), spritesUncolored.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-		
-		for (int y = 0; y < sprites.getHeight(); y++) {
-			for (int x = 0; x < sprites.getWidth(); x++) {
-				// get the raw grayscale color from the spritesheet
-				int raw = spritesUncolored.getRGB(x, y);
-				
-				// if the pixel is not transparent
-				// and we aren't dealing with ANN celebrities
-				if (raw < 0 && y < 0xC0) {
-					// figure out what index it should be
-					int idx = raw == -0x01000000 ? 0 : raw == -1 ? 1 : 2;
-					
-					// use that index into the color palette and write to the colored image
-					sprites.setRGB(x, y, colors[y/0x40][idx].getRGB());
-				}
-			}
-		}
-	}
-	
+		return out;
+	}	
 }

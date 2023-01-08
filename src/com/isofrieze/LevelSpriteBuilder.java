@@ -1,8 +1,11 @@
 package com.isofrieze;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.isofrieze.LevelTileBuilder.TileObject;
 import com.isofrieze.SMBLevelDrawer.Game;
 import com.isofrieze.SMBLevelDrawer.LevelType;
 import com.isofrieze.SpriteSheetManager.Sprite;
@@ -207,7 +210,13 @@ public class LevelSpriteBuilder {
 				Sprite lift = CLOUD_LIFT ?
 						(SMALL_LIFT ? Sprite.MEDIUM_CLOUDS : Sprite.LONG_CLOUDS) :
 						(SMALL_LIFT ? Sprite.MEDIUM_LIFT : Sprite.LONG_LIFT);
-				addDisplaySprite(lift, x, y); break;
+				
+				// different lifts are drawn at different x positions
+				int shift = 0;
+				if (type == 0x26 || type == 0x27) shift = -4;
+				if (type == 0x24 && SMALL_LIFT) shift = 8;
+				
+				addDisplaySprite(lift, x + shift, y); break;
 			}
 			case 0x2B: case 0x2C:
 						addDisplaySprite(Sprite.SHORT_LIFT, x, y); break;
@@ -241,7 +250,7 @@ public class LevelSpriteBuilder {
 				// in ANN, the NPCs are all different per world
 				if (SMBLevelDrawer.game == Game.ALL_NIGHT_NIPPON) {
 					if (SMBLevelDrawer.MY_EXTRA) {
-						npc = Sprite.ANN_NPC_8;
+						npc = Sprite.ANN_NPC_9;
 					} else {
 						switch (SMBLevelDrawer.MY_WORLD) {
 							case 1: npc = Sprite.ANN_NPC_1; break;
@@ -267,7 +276,7 @@ public class LevelSpriteBuilder {
 							npc = Sprite.PEACH;
 					}
 				}
-				addDisplaySprite(npc, x, y); break;
+				addDisplaySprite(npc, x, 176); break;
 			}
 			// case 0x36: // CRASH likely
 			case 0x38:
@@ -307,6 +316,22 @@ public class LevelSpriteBuilder {
 	}
 	
 	public BufferedImage print() {
-		return new BufferedImage(16,16,BufferedImage.TYPE_4BYTE_ABGR);
+		BufferedImage img = new BufferedImage(16*16*16,16*17,BufferedImage.TYPE_4BYTE_ABGR);
+		Graphics2D g = (Graphics2D)img.getGraphics();
+		
+		for (int i = 0; i < displayedSprites.size(); i++) {
+			SMBLevelDrawer.ssm.drawSprite(g, displayedSprites.get(i));
+		}
+		
+		if (VERBOSE_SPRITES) {
+			g.setColor(Color.YELLOW);
+			for (int i = 0; i < spriteList.size(); i++) {
+				SpriteObject t = spriteList.get(i);
+				g.drawRect(0x10*t.x+4, 0x10*t.y+4, 8, 8);
+				g.drawString(t.data, 0x10*t.x+12, 0x10*t.y+4);
+			}
+		}
+		
+		return img;
 	}
 }

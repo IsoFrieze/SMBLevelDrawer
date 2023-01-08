@@ -448,7 +448,7 @@ public class LevelTileBuilder {
 					renderTile(column, 0, Tile.FLAGPOLE_BALL);
 					for (int i = 1; i <= 9; i++) renderUnderPart(column, i, Tile.FLAGPOLE);
 					renderTile(column, 10, Tile.SQUARE_BLOCK);
-					addDisplayComboSprite(Sprite.FLAGPOLE_FLAG, x, y);
+					addDisplayComboSprite(Sprite.FLAGPOLE_FLAG, x, 1);
 				}
 				
 			} else if (id == 1) { // special platform
@@ -525,16 +525,16 @@ public class LevelTileBuilder {
 					for (int i = 1; i < length && y + i <= 12; i++) 
 						renderUnderPart(column, y + i, Tile.PIPE_SHAFT_RIGHT);
 					
+				} else if (index == 2) {
+					renderTile(column, y, canEnter ? Tile.PIPE_LIP_ENTERABLE_LEFT : Tile.PIPE_LIP_LEFT);
+					for (int i = 1; i < length && y + i <= 12; i++) 
+						renderUnderPart(column, y + i, Tile.PIPE_SHAFT_LEFT);		
+					
 					// piranha plants in pipes only after 1-1 (except LL)
 					if (SMBLevelDrawer.MY_WORLD > 1 || SMBLevelDrawer.MY_LEVEL > 1 ||
 						SMBLevelDrawer.game == Game.LOST_LEVELS)
 							addDisplayComboSprite(SMBLevelDrawer.game == Game.LOST_LEVELS && SMBLevelDrawer.MY_WORLD >= 4 ?
-								Sprite.RED_PIRANHA_PLANT : Sprite.GREEN_PIRANHA_PLANT, x, y - 1);
-					
-				} else if (index == 2) {
-					renderTile(column, y, canEnter ? Tile.PIPE_LIP_ENTERABLE_LEFT : Tile.PIPE_LIP_LEFT);
-					for (int i = 1; i < length && y + i <= 12; i++) 
-						renderUnderPart(column, y + i, Tile.PIPE_SHAFT_LEFT);			
+								Sprite.RED_PIRANHA_PLANT : Sprite.GREEN_PIRANHA_PLANT, x, y - 1);	
 				}
 			}
 			
@@ -602,7 +602,7 @@ public class LevelTileBuilder {
 				renderTile(column, 0, Tile.FLAGPOLE_BALL);
 				for (int i = 1; i <= 9; i++) renderUnderPart(column, i, Tile.FLAGPOLE);
 				renderTile(column, 10, Tile.SQUARE_BLOCK);
-				addDisplayComboSprite(Sprite.FLAGPOLE_FLAG, x, y);
+				addDisplayComboSprite(Sprite.FLAGPOLE_FLAG, x, 1);
 				
 			} else if (id == 2) { // axe
 				renderTile(column, 6, Tile.AXE);
@@ -614,14 +614,14 @@ public class LevelTileBuilder {
 				renderTile(column, 8, Tile.BOWSER_BRIDGE);
 				
 			} else if (id == 8) { // jumping cheep cheep generator
-				addDisplayComboSprite(Sprite.RED_CHEEP_CHEEP, x, y);
+				addDisplayComboSprite(Sprite.RED_CHEEP_CHEEP, x, 1);
 				
 			} else if (id == 9) { // swimming cheep / bullet generator
 				addDisplayComboSprite(type == LevelType.UNDERWATER ?
-						Sprite.RED_CHEEP_CHEEP : Sprite.BULLET_BILL, x, y);
+						Sprite.RED_CHEEP_CHEEP : Sprite.BULLET_BILL, x, 1);
 				
 			} else if (id == 12 && laterObjectsLoaded) { // wind, but only if loaded
-				addDisplayComboSprite(Sprite.WIND, x, y);
+				addDisplayComboSprite(Sprite.WIND, x, 1);
 				
 			} else {
 				// CRASH likely
@@ -636,7 +636,7 @@ public class LevelTileBuilder {
 				terrain[1] = memory.getBits(object.b, 0x07);
 				
 				// change level palette only if this object is in the first screen and a half
-				if (x < 24) changeLevelBackdropPalette(terrain[1]);
+				if (x < 24) backdropPalette = changeLevelBackdropPalette(terrain[1]);
 			}
 			
 		} else if (y == 15) {
