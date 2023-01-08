@@ -121,13 +121,13 @@ public class SMBLevelDrawer {
 			return;
 		}
 
-		byte[] suppliedFile = null, fdsBios = null;
+		byte[] suppliedData = null, fdsBios = null;
 		
 		// if we are getting data from files, load those in
 		if (filenames[0] != null) {
 			try (FileInputStream in = new FileInputStream(filenames[0])) {
-				suppliedFile = new byte[(int)in.getChannel().size()];
-				in.read(suppliedFile, 0, suppliedFile.length);
+				suppliedData = new byte[(int)in.getChannel().size()];
+				in.read(suppliedData, 0, suppliedData.length);
 			} catch (IOException e) {
 				System.err.println("Error reading the input file!");
 				e.printStackTrace();
@@ -143,8 +143,13 @@ public class SMBLevelDrawer {
 				}
 			}
 			
-			game = detectGame(suppliedFile);
+			game = detectGame(suppliedData);
 		}
+		
+		// if the user supplies a game, but doesn't supply a level number or anything similar
+		// we are going to loop over all levels in the game
+		boolean loopOverAllLevels = game != Game.NONE && REQUESTED_LEVEL == null && REQUESTED_ID < 0 &&
+				(REQUESTED_TILE_ADDRESS < 0 || REQUESTED_SPRITE_ADDRESS < 0);
 		
 		// if we didn't detect a game, but the user supplied one, use that
 		if (game == Game.NONE) game = REQUESTED_GAME;
@@ -152,72 +157,103 @@ public class SMBLevelDrawer {
 		// load in resources
 		ssm.initialize();
 		
-		// TODO if all requested things are not present, loop over all level numbers a-b.c
+		if (loopOverAllLevels) {
+			// LL and ANN go up to world D
+			int numberOfWorlds = game == Game.LOST_LEVELS || game == Game.ALL_NIGHT_NIPPON ? 13 : 8;
+			
+			for (int w = 1; w <= numberOfWorlds; w++) {
+				// ANN has no world 9
+				if (w == 9 & game == Game.ALL_NIGHT_NIPPON) w++;
+				
+				for (int l = 1; l <= 4; l++) {
+					int numberOfSublevels = 1 + listOfSublevels[game.getNum()][w-1][l-1].length;
+					
+					for (int s = 1; s <= numberOfSublevels; s++) {
+						// fake the input string level number and then run the program as if that was input
+						REQUESTED_LEVEL = String.format("%x-%d.%d", w, l, s).toUpperCase();
+						
+						// append the level number to the output file name
+						String outputName = filenames[2];
+						if (outputName.indexOf(".") >= 0) outputName = outputName.substring(0, outputName.indexOf("."));
+						outputName = String.format("%s_%s.png", outputName, REQUESTED_LEVEL);
+						
+						processALevel(suppliedData, fdsBios, outputName);
+						
+						REQUESTED_ID = -1;
+						REQUESTED_TILE_DATA = null;
+					}
+				}
+			}
+			
+		} else {
+			// just process the one level requested
+			processALevel(suppliedData, fdsBios, filenames[2]);	
+		}
+	}
+	
+	private static void processALevel(byte[] data, byte[] bios, String output) {
+		int[] levelDataPointers = new int[2];
 		
-		{
-			int[] levelDataPointers = new int[2];
+		if (REQUESTED_TILE_DATA == null) {
+			// if we are loading data from a game
 			
-			if (REQUESTED_TILE_DATA == null) {
-				// if we are loading data from a game
-				
-				// first get the "preferred" disc file for whatever level is going to be generated
-				int preferredDiscFile = determinePreferredDiscFile();
-				
-				// load memory with that disc file
-				memory = prepareMemorySpace(suppliedFile, fdsBios);
-				loadDiscFile(preferredDiscFile, suppliedFile);
-				
-				// get the level data pointers
-				levelDataPointers = getLevelDataPointers(preferredDiscFile);
-				
-				// then load the requested disc file
-				if (REQUESTED_FILE > 0) loadDiscFile(REQUESTED_FILE, suppliedFile);
-				
-				
-			} else {
-				// if we are reading inline data from the command line
-				
-				memory = prepareMemorySpace(levelDataPointers, REQUESTED_TILE_DATA, REQUESTED_SPRITE_DATA);
-			}
+			// first get the "preferred" disc file for whatever level is going to be generated
+			int preferredDiscFile = determinePreferredDiscFile();
 			
-			// the type of level (water, castle, etc.)
-			LevelType type = LevelType.getType(REQUESTED_LEVEL_TYPE >= 0 ? REQUESTED_LEVEL_TYPE : (REQUESTED_ID & 0x60) >> 5);
+			// load memory with that disc file
+			memory = prepareMemorySpace(data, bios);
+			loadDiscFile(preferredDiscFile, data);
 			
-			System.out.printf("detectedGame = %s%n", game.name());
-			System.out.printf("REQUESTED_LEVEL = %s (%d | %d | %d)%n", REQUESTED_LEVEL, MY_WORLD, MY_LEVEL, MY_SUBLEVEL);
-			System.out.printf("REQUESTED_ID = 0x%x, REQUESTED_FILE = %d%n", REQUESTED_ID, REQUESTED_FILE);
-			System.out.printf("TILE_ADDRESS = 0x%x, SPRITE_ADDRESS = 0x%x, LEVEL_TYPE = %s%n", levelDataPointers[0], levelDataPointers[1], type.name());
+			// get the level data pointers
+			levelDataPointers = getLevelDataPointers(preferredDiscFile);
+			
+			// then load the requested disc file
+			if (REQUESTED_FILE > 0) loadDiscFile(REQUESTED_FILE, data);
+			
+			
+		} else {
+			// if we are reading inline data from the command line
+			
+			memory = prepareMemorySpace(levelDataPointers, REQUESTED_TILE_DATA, REQUESTED_SPRITE_DATA);
+		}
+		
+		// the type of level (water, castle, etc.)
+		LevelType type = LevelType.getType(REQUESTED_LEVEL_TYPE >= 0 ? REQUESTED_LEVEL_TYPE : (REQUESTED_ID & 0x60) >> 5);
+		
+		System.out.printf("detectedGame = %s%n", game.name());
+		System.out.printf("REQUESTED_LEVEL = %s (%d | %d | %d)%n", REQUESTED_LEVEL, MY_WORLD, MY_LEVEL, MY_SUBLEVEL);
+		System.out.printf("REQUESTED_ID = 0x%x, REQUESTED_FILE = %d%n", REQUESTED_ID, REQUESTED_FILE);
+		System.out.printf("TILE_ADDRESS = 0x%x, SPRITE_ADDRESS = 0x%x, LEVEL_TYPE = %s%n", levelDataPointers[0], levelDataPointers[1], type.name());
 
-			// build the level's tile data
-			LevelTileBuilder tileBuilder = new LevelTileBuilder(levelDataPointers[0], type);
-			tileBuilder.build();
-			
-			// build the level's sprite data
-			LevelSpriteBuilder spriteBuilder = new LevelSpriteBuilder(levelDataPointers[1], type, tileBuilder.isCloudy());
-			// get some sprite info from the tile data
-			spriteBuilder.addSpontaneousSprites(tileBuilder.getComboSprites());
-			spriteBuilder.build();
-			
-			// now that the level has been processed, we can prepare things to be drawn with the correct palettes
-			ssm.setPalettes();
-			
-			// print the level data
-			BufferedImage tileImage = tileBuilder.print();
-			BufferedImage spriteImage = spriteBuilder.print();
-			
-			// create the final image
-			BufferedImage finalImage = new BufferedImage(tileImage.getWidth(), tileImage.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-			Graphics2D g = (Graphics2D)finalImage.getGraphics();
-			if (TILES) g.drawImage(tileImage, 0, 0, null);
-			if (SPRITES) g.drawImage(spriteImage, 0, 0, null);
-			
-			// write it to a file
-			try {
-				ImageIO.write(finalImage, "png", new File(filenames[2]));
-			} catch (IOException e) {
-				System.err.println("Error writing the output file!");
-				e.printStackTrace();
-			}
+		// build the level's tile data
+		LevelTileBuilder tileBuilder = new LevelTileBuilder(levelDataPointers[0], type);
+		tileBuilder.build();
+		
+		// build the level's sprite data
+		LevelSpriteBuilder spriteBuilder = new LevelSpriteBuilder(levelDataPointers[1], type, tileBuilder.isCloudy());
+		// get some sprite info from the tile data
+		spriteBuilder.addSpontaneousSprites(tileBuilder.getComboSprites());
+		spriteBuilder.build();
+		
+		// now that the level has been processed, we can prepare things to be drawn with the correct palettes
+		ssm.setPalettes();
+		
+		// print the level data
+		BufferedImage tileImage = tileBuilder.print();
+		BufferedImage spriteImage = spriteBuilder.print();
+		
+		// create the final image
+		BufferedImage finalImage = new BufferedImage(tileImage.getWidth(), tileImage.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+		Graphics2D g = (Graphics2D)finalImage.getGraphics();
+		if (TILES) g.drawImage(tileImage, 0, 0, null);
+		if (SPRITES) g.drawImage(spriteImage, 0, 0, null);
+		
+		// write it to a file
+		try {
+			ImageIO.write(finalImage, "png", new File(output));
+		} catch (IOException e) {
+			System.err.println("Error writing the output file!");
+			e.printStackTrace();
 		}
 	}
 	
@@ -567,6 +603,9 @@ public class SMBLevelDrawer {
 					// if it doesn't have that sublevel, just default to the main level
 					MY_SUBLEVEL = 1;
 				}
+				
+				// treat worlds A-D as worlds 1-4
+				if (Character.isAlphabetic(REQUESTED_LEVEL.charAt(0))) MY_WORLD -= 9;
 			}
 			
 			if (MY_SUBLEVEL == 1) {
@@ -651,7 +690,7 @@ public class SMBLevelDrawer {
 			
 			// but that level data bank was only there as a hack to make this easy, so we should delete it now
 			// I don't even think it can ever be accessed anyway but who knows
-			for (int i = 0; i < 0x2000; i++) memory.write8(0, i);
+			//for (int i = 0; i < 0x2000; i++) memory.write8(0, i);
 			
 			return new int[] {levelDataTilePointers[g][2], levelDataSpritePointers[g][2]};
 			

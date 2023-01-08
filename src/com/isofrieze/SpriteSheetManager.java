@@ -24,7 +24,7 @@ public class SpriteSheetManager {
 	// (x position, y position, palette)
 	// according to the spritesheet
 	public enum Tile {
-		DIRT(0,0,0), SQUARE_BLOCK(1,0,0), SEAFLOOR(2,0,0), CASTLE_MASONRY(3,0,0), USED_BLOCK(4,0,0),
+		DIRT(0,0,0), SQUARE_BLOCK(1,0,0), SEAFLOOR(2,0,0), CASTLE_MASONRY(3,0,0),
 		BRICK_SHINY(0,1,0), BRICK_DULL(2,1,0), CASTLE_WINDOW_LEFT(3,1,0),
 		CASTLE_WINDOW_RIGHT(1,1,0), CASTLE_CRENEL(4,1,0), CASTLE_CRENEL_FILLED(5,1,0),
 		CASTLE_DOOR_TOP(6,1,0), CASTLE_DOOR_BOTTOM(7,1,0), CASTLE_BRICK(2,1,0),
@@ -50,7 +50,7 @@ public class SpriteSheetManager {
 		BG_CLOUD_BOTTOM_LEFT(0,9,2), BG_CLOUD_BOTTOM_MIDDLE(1,9,2),
 		BG_CLOUD_BOTTOM_RIGHT(2,9,2), CLOUD(0,10,2), BOWSER_BRIDGE(1,10,2),
 		WATER_TOP(3,8,2), WATER_BOTTOM(3,9,2), LONG_CLOUD_LEFT(4,8,2),
-		LONG_CLOUD_MIDDLE(5,8,2), LONG_CLOUD_RIGHT(6,8,2),
+		LONG_CLOUD_MIDDLE(5,8,2), LONG_CLOUD_RIGHT(6,8,2), USED_BLOCK(1,13,3),
 		QUESTION_BLOCK_COIN(0,12,3), COIN(1,12,3), COIN_WATER(2,12,3), AXE(0,13,3),
 		QUESTION_BLOCK_FIREFLOWER(0,12,3), QUESTION_BLOCK_POISON_MUSHROOM(0,12,3),
 		INVISIBLE_BLOCK_COIN(10,0,0), INVISIBLE_BLOCK_LIFE_MUSHROOM(10,0,0),
@@ -176,9 +176,7 @@ public class SpriteSheetManager {
 	
 	public void setPalettes() {
 		// the main palette is based off of the level type
-		// (or forced to castle palette if gray backdrop is set)
-		mainPalette = LevelTileBuilder.backdropPalette == BackdropModifier.GRAY ?
-				LevelType.CASTLE : LevelTileBuilder.type;
+		mainPalette = LevelTileBuilder.type;
 		
 		// the secondary palette is changed via snow backdrop or orange mushroom special platform
 		tilePaletteModifier = PaletteModifier.NORMAL;
@@ -195,8 +193,12 @@ public class SpriteSheetManager {
 		
 		tilePalettes = new Color[4][4];
 		for (int i = 0; i < tilePalettes.length; i++) {
+			// the gray backdrop modifier forces only the first 3 palettes to castle colors
+			LevelType palette = LevelTileBuilder.backdropPalette == BackdropModifier.GRAY &&
+					i < 3 ? LevelType.CASTLE : mainPalette;
+			
 			for (int j = 0; j < tilePalettes[i].length; j++) {
-				tilePalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 * mainPalette.getNum() + j), 0x10 * i));
+				tilePalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 * palette.getNum() + j), 0x10 * i));
 			}
 		}
 		
@@ -230,7 +232,7 @@ public class SpriteSheetManager {
 		for (int i = 0; i < celebPalettes.length; i++) {
 			for (int j = 0; j < celebPalettes[i].length; j++) {
 				// colors are swapped on the sprite sheet because I think it looks better
-				int k = (i % 3) + 1;
+				int k = (j % 3) + 1;
 				
 				celebPalettes[i][j] = new Color(palettes.getRGB(0x10 * (4 + k), 0x10 * (12 + i)));
 			}
@@ -255,7 +257,7 @@ public class SpriteSheetManager {
 			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 			
 			if (t == Tile.INVISIBLE_BLOCK_COIN || t == Tile.INVISIBLE_BLOCK_POISON_MUSHROOM ||
-					t == Tile.INVISIBLE_BLOCK_LIFE_MUSHROOM)
+					 t == Tile.INVISIBLE_BLOCK_FIREFLOWER || t == Tile.INVISIBLE_BLOCK_LIFE_MUSHROOM)
 				g.drawImage(getTileFromSheet(Tile.QUESTION_BLOCK_COIN), x, y, null);
 			
 			if (t == Tile.QUESTION_BLOCK_FIREFLOWER || t == Tile.INVISIBLE_BLOCK_FIREFLOWER ||

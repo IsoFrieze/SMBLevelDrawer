@@ -213,7 +213,7 @@ public class LevelSpriteBuilder {
 				
 				// different lifts are drawn at different x positions
 				int shift = 0;
-				if (type == 0x26 || type == 0x27) shift = -4;
+				if (type == 0x26 || type == 0x27) shift = 12;
 				if (type == 0x24 && SMALL_LIFT) shift = 8;
 				
 				addDisplaySprite(lift, x + shift, y); break;

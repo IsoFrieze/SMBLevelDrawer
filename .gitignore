@@ -28,4 +28,4 @@ replay_pid*
 *.fds
 
 # test output
-output.png
+output*

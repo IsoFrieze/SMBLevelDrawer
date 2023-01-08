@@ -88,7 +88,7 @@ public class LevelTileBuilder {
 		
 		laterObjectsLoaded = (SMBLevelDrawer.game == Game.LOST_LEVELS ||
 				SMBLevelDrawer.game == Game.ALL_NIGHT_NIPPON) &&
-				SMBLevelDrawer.MY_WORLD >= 5;
+				(SMBLevelDrawer.MY_WORLD >= 5 || SMBLevelDrawer.MY_EXTRA);
 	}
 	
 	public boolean isCloudy() {
@@ -495,7 +495,8 @@ public class LevelTileBuilder {
 					}
 				}
 			} else if (id == 2) { // brick row
-				renderTile(column, y, type == LevelType.UNDERWATER ? Tile.CORAL :
+				renderTile(column, y, specialPlatform == SpecialPlatform.GREEN_CLOUD ? Tile.CLOUD : 
+					type == LevelType.UNDERWATER ? Tile.CORAL :
 					type == LevelType.OVERWORLD ? Tile.BRICK_SHINY : Tile.BRICK_DULL);
 				
 			} else if (id == 3) { // square block row
@@ -506,7 +507,8 @@ public class LevelTileBuilder {
 				renderTile(column, y, type == LevelType.UNDERWATER ? Tile.COIN_WATER : Tile.COIN);
 				
 			} else if (id == 5) { // brick column
-				Tile tile = type == LevelType.UNDERWATER ? Tile.CORAL :
+				Tile tile =  specialPlatform == SpecialPlatform.GREEN_CLOUD ? Tile.CLOUD : 
+					type == LevelType.UNDERWATER ? Tile.CORAL :
 					type == LevelType.OVERWORLD ? Tile.BRICK_SHINY : Tile.BRICK_DULL;
 				for (int i = 0; i < length && y + i <= 12; i++) renderTile(column, y + i, tile);
 				
@@ -542,7 +544,8 @@ public class LevelTileBuilder {
 			int id = memory.getBits(object.b, 0x70);
 			
 			if (id == 0) { // hole
-				for (int i = 8; i <= 12; i++) renderUnderPart(column, i, null);
+				for (int i = 8; i <= 12; i++)
+					renderUnderPart(column, i, type == LevelType.UNDERWATER ? Tile.WATER_BOTTOM : null);
 				
 			} else if (id == 1) { // horizontal pulley rope
 				if (index == 1) renderTile(column, 0, Tile.PULLEY_RIGHT);
@@ -562,8 +565,6 @@ public class LevelTileBuilder {
 				renderUnderPart(column, 10, Tile.BRIDGE_FLOOR);
 				
 			} else if (id == 5) { // hole with water
-				renderUnderPart(column, 8, null);
-				renderUnderPart(column, 9, null);
 				renderUnderPart(column, 10, Tile.WATER_TOP);
 				renderUnderPart(column, 11, Tile.WATER_BOTTOM);
 				renderUnderPart(column, 12, Tile.WATER_BOTTOM);
@@ -928,9 +929,9 @@ public class LevelTileBuilder {
 						tile = Tile.SEAFLOOR;
 					
 					// castle levels use masonry
-					// water levels in world 8 use masonry
+					// water levels in world 8 use masonry TODO only in SMB, check this for LL
 					if (type == LevelType.CASTLE ||
-							(type == LevelType.CASTLE && SMBLevelDrawer.MY_WORLD == 8))
+							(type == LevelType.UNDERWATER && SMBLevelDrawer.MY_WORLD == 8))
 						tile = Tile.CASTLE_MASONRY;
 					
 					// underground levels use bricks (except floor)
