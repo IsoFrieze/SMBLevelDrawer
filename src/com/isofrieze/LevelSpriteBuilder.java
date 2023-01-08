@@ -147,7 +147,10 @@ public class LevelSpriteBuilder {
 				
 				// sprite only spawns if it is within the loading zone (about a 4 column wide area)
 				// and if either hard mode is enabled or the sprite's flag is not set
-				if (globalXPos >= xExtent - 4 && (HARD_MODE || hardMode == 0)) {
+				// TODO check if games other than VS ignore hard flag
+				boolean hardFlag = (SMBLevelDrawer.game == Game.VS_SUPER_MARIO_BROS ||
+						HARD_MODE || hardMode == 0);
+				if (globalXPos >= xExtent - 4 && hardFlag) {
 					
 					addApplicableDisplaySprites(spriteType, 16 * globalXPos, 16 * yPos);
 					xExtent = globalXPos;

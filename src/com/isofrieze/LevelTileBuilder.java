@@ -91,10 +91,6 @@ public class LevelTileBuilder {
 				(SMBLevelDrawer.MY_WORLD >= 5 || SMBLevelDrawer.MY_EXTRA);
 	}
 	
-	public boolean isCloudy() {
-		return specialPlatform == SpecialPlatform.GREEN_CLOUD;
-	}
-	
 	// return list of sprites that come 'for free' from tile objects
 	public List<SpriteInstance> getComboSprites() {
 		return comboSprites;
@@ -203,7 +199,7 @@ public class LevelTileBuilder {
 	// 1) create a list of tile that are drawn to the level for the output image
 	// 2) create a technical list of all tile objects in the level for verbose markers
 	// 3) return the width of the level (last column of last object)
-	public int build() {
+	public int build(int minWidth) {
 		int[] terrain = processLevelHeader();
 		
 		// offset into the tile data
@@ -227,7 +223,10 @@ public class LevelTileBuilder {
 
 		// TODO looping offset
 		while (offset < 0x100 && endBuffer >= 0) {
-			if (memory.read8(dataBasePointer + offset) == 0xFD && queue.isEmpty()) endBuffer--;
+			// keep drawing the level a few tiles past the last object
+			// even further if there are sprites out there
+			if (memory.read8(dataBasePointer + offset) == 0xFD && queue.isEmpty() && xExtent >= minWidth)
+				endBuffer--;
 			
 			// start with an empty column of tiles, and fill it in as we go
 			Tile [] column = new Tile[13];
@@ -338,7 +337,7 @@ public class LevelTileBuilder {
 			xExtent++;
 		}
 		
-		// otherwise just return the last column of the last object + 2
+		// return the last column of the last object + 2
 		// this makes big castles at the end of levels look good c:
 		return xExtent - BUFFER_SIZE + 1;
 	}
@@ -439,11 +438,13 @@ public class LevelTileBuilder {
 					
 				} else if (kind == 16) { // L pipe
 					if (index == 1) {
+						for (int i = 0; i <= 6; i++) renderTile(column, i, null);
 						renderTile(column, 7, Tile.PIPE_LIP_ENTERABLE_RIGHT);
 						renderUnderPart(column, 8, Tile.PIPE_SHAFT_RIGHT);
 						for (int i = 9; i <= 10; i++) renderTile(column, i, Tile.PIPE_SHAFT_RIGHT);
 						
 					} else if (index == 2) {
+						for (int i = 0; i <= 6; i++) renderTile(column, i, null);
 						renderTile(column, 7, Tile.PIPE_LIP_ENTERABLE_LEFT);
 						renderUnderPart(column, 8, Tile.PIPE_SHAFT_LEFT);
 						renderTile(column, 9, Tile.PIPE_CONNECTION_TOP);
@@ -474,19 +475,19 @@ public class LevelTileBuilder {
 					
 				} else if (specialPlatform == SpecialPlatform.ORANGE_MUSHROOM) {
 					if (SMBLevelDrawer.game == Game.LOST_LEVELS) { // long cloud
-						if (index == 1) {
-							renderTile(column, y, Tile.LONG_CLOUD_RIGHT);
-						} else if (x == object.x) {
+						if (x == object.x) { 
 							renderTile(column, y, Tile.LONG_CLOUD_LEFT);
+						} else if (index == 1) {
+							renderTile(column, y, Tile.LONG_CLOUD_RIGHT);
 						} else {
 							renderTile(column, y, Tile.LONG_CLOUD_MIDDLE);
 						}
 						
 					} else { // orange mushroom
-						if (index == 1) {
-							renderTile(column, y, Tile.MUSHROOM_RIGHT);
-						} else if (x == object.x) {
+						if (x == object.x) {
 							renderTile(column, y, Tile.MUSHROOM_LEFT);
+						} else if (index == 1) {
+							renderTile(column, y, Tile.MUSHROOM_RIGHT);
 						} else {
 							renderTile(column, y, Tile.MUSHROOM_MIDDLE);
 						}
@@ -498,10 +499,10 @@ public class LevelTileBuilder {
 						} 
 					}
 				} else { // green tree
-					if (index == 1) {
-						renderTile(column, y, Tile.TREE_RIGHT);
-					} else if (x == object.x) {
+					if (x == object.x) {
 						renderTile(column, y, Tile.TREE_LEFT);
+					} else if (index == 1) {
+						renderTile(column, y, Tile.TREE_RIGHT);
 					} else {
 						renderTile(column, y, Tile.TREE_MIDDLE);
 						for (int i = y + 1; i <= 12; i++)
@@ -521,8 +522,7 @@ public class LevelTileBuilder {
 				renderTile(column, y, type == LevelType.UNDERWATER ? Tile.COIN_WATER : Tile.COIN);
 				
 			} else if (id == 5) { // brick column
-				Tile tile =  specialPlatform == SpecialPlatform.GREEN_CLOUD ? Tile.CLOUD : 
-					type == LevelType.UNDERWATER ? Tile.CORAL :
+				Tile tile =  type == LevelType.UNDERWATER ? Tile.CORAL :
 					type == LevelType.OVERWORLD ? Tile.BRICK_SHINY : Tile.BRICK_DULL;
 				for (int i = 0; i < length && y + i <= 12; i++) renderTile(column, y + i, tile);
 				
@@ -595,11 +595,13 @@ public class LevelTileBuilder {
 			
 			if (id == 0) { // L pipe
 				if (index == 1) {
+					for (int i = 0; i <= 6; i++) renderTile(column, i, null);
 					renderTile(column, 7, Tile.PIPE_LIP_ENTERABLE_RIGHT);
 					renderUnderPart(column, 8, Tile.PIPE_SHAFT_RIGHT);
 					for (int i = 9; i <= 10; i++) renderTile(column, i, Tile.PIPE_SHAFT_RIGHT);
 					
 				} else if (index == 2) {
+					for (int i = 0; i <= 6; i++) renderTile(column, i, null);
 					renderTile(column, 7, Tile.PIPE_LIP_ENTERABLE_LEFT);
 					renderUnderPart(column, 8, Tile.PIPE_SHAFT_LEFT);
 					renderTile(column, 9, Tile.PIPE_CONNECTION_TOP);
@@ -948,10 +950,14 @@ public class LevelTileBuilder {
 							(type == LevelType.UNDERWATER && SMBLevelDrawer.MY_WORLD == 8))
 						tile = Tile.CASTLE_MASONRY;
 					
-					// underground levels use bricks (except floor)
-					if (type == LevelType.UNDERGROUND && i < 11)
+					// underground levels use bricks
+					if (type == LevelType.UNDERGROUND)
 						tile = Tile.BRICK_DULL;
 				}
+				
+				// underground levels still use dirt on the bottom though (overrides clouds)
+				if (type == LevelType.UNDERGROUND && i >= 11)
+					tile = Tile.DIRT;
 				
 				column[i] = tile;
 			}

@@ -224,30 +224,32 @@ public class SMBLevelDrawer {
 		System.out.printf("REQUESTED_LEVEL = %s (%d | %d | %d)%n", REQUESTED_LEVEL, MY_WORLD, MY_LEVEL, MY_SUBLEVEL);
 		System.out.printf("REQUESTED_ID = 0x%x, REQUESTED_FILE = %d%n", REQUESTED_ID, REQUESTED_FILE);
 		System.out.printf("TILE_ADDRESS = 0x%x, SPRITE_ADDRESS = 0x%x, LEVEL_TYPE = %s%n", levelDataPointers[0], levelDataPointers[1], type.name());
-
-		// build the level's tile data
-		LevelTileBuilder tileBuilder = new LevelTileBuilder(levelDataPointers[0], type);
-		int levelTileWidth = tileBuilder.build();
+		
+		// the sprites need to know if the tile data header says the level should be cloudy
+		boolean isCloudy = memory.readBits(levelDataPointers[0] + 1, 0xC0) == 3;
 		
 		// build the level's sprite data
-		LevelSpriteBuilder spriteBuilder = new LevelSpriteBuilder(levelDataPointers[1], type, tileBuilder.isCloudy());
+		LevelSpriteBuilder spriteBuilder = new LevelSpriteBuilder(levelDataPointers[1], type, isCloudy);
+		int spriteExtent = 9 + spriteBuilder.build();
+		
+		// build the level's tile data
+		LevelTileBuilder tileBuilder = new LevelTileBuilder(levelDataPointers[0], type);
+		int levelWidth = tileBuilder.build(spriteExtent);
+		
 		// get some sprite info from the tile data
 		spriteBuilder.addSpontaneousSprites(tileBuilder.getComboSprites());
-		int levelSpriteWidth = 9 + spriteBuilder.build();
 		
 		// now that the level has been processed, we can prepare things to be drawn with the correct palettes
 		ssm.setPalettes();
 		
-		// the level width is the greater of the size of the tiles and sprites
-		int imageWidth = (levelTileWidth > levelSpriteWidth ? levelTileWidth : levelSpriteWidth);
-		
 		// print the level data
-		BufferedImage tileImage = tileBuilder.print(imageWidth);
-		BufferedImage spriteImage = spriteBuilder.print(imageWidth);
+		if (WIDTH >= 0) levelWidth = WIDTH;
+		BufferedImage tileImage = tileBuilder.print(levelWidth);
+		BufferedImage spriteImage = spriteBuilder.print(levelWidth);
 		
 		// create the final image
 		int imageHeight = ((LevelTileBuilder.VERBOSE_TILES || LevelSpriteBuilder.VERBOSE_SPRITES) ? 17 : 14);
-		BufferedImage finalImage = new BufferedImage(16 * imageWidth, 16 * imageHeight, BufferedImage.TYPE_4BYTE_ABGR);
+		BufferedImage finalImage = new BufferedImage(16 * levelWidth, 16 * imageHeight, BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics2D g = (Graphics2D)finalImage.getGraphics();
 		if (TILES) g.drawImage(tileImage, 0, 0, null);
 		if (SPRITES) g.drawImage(spriteImage, 0, 0, null);
