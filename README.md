@@ -2,6 +2,8 @@
 A program to draw images of Super Mario Bros. level data.
 
 # How to Use
+`java -jar SMBLevelDrawer.jar [arguments]`
+
 You will need to supply your own game ROMs to draw levels from the games the supported games are:
  
 - Super Mario Bros. (NES)
@@ -10,8 +12,8 @@ You will need to supply your own game ROMs to draw levels from the games the sup
 - VS. Super Mario Bros. (NES conversion)
 - Super Mario Bros. 2 (FDS)
 
- However with additional inputs you can supply any file with level data in it along with some pointers to the data within that file to draw arbitrary levels.
- 
+However with additional inputs you can supply any file with level data in it along with some pointers to the data within that file to draw arbitrary levels.
+
 # Arguments
 
 ## Input File
@@ -82,6 +84,8 @@ What level to draw. These are two offsets into the input file--the first marks t
 `<leveltype>` is `0` for underwater, `1` for overworld, `2` for underground, and `3` for castle.
 This argument is required if you don't supply one of the supported game ROMs, as it is the only way to know where the level data is located within the input file.
 For supported game ROMs, the addresses are within the NES's address space. For other input files, the addresses are offsets from the start of the file.
+
+If you supply a ROM file, but don't supply a level name, ID, or address, the program will draw all levels and sublevels in the game.
 
 
 ## Game

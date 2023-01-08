@@ -2,6 +2,8 @@ package com.isofrieze;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -163,15 +165,24 @@ public class SpriteSheetManager {
 	// load in the proper resources
 	public void initialize() {
 		String s = SMBLevelDrawer.game.getAbbreviation();
+
+		tiles = loadResource(s + "/tiles.png");
+		sprites = loadResource(s + "/sprites.png");
+		palettes = loadResource("palettes.png");
+	}
+	
+	public BufferedImage loadResource(String filename) {
+		Image res = Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource(filename));
+
+		// wait for the image to load (doesn't take very long)
+		while(res.getWidth(null) < 0) try { Thread.sleep(100); } catch (InterruptedException e) { e.printStackTrace(); }
+
+		// copy to a buffered image so we can read pixels easy
+		BufferedImage img = new BufferedImage(res.getWidth(null), res.getHeight(null), BufferedImage.TYPE_4BYTE_ABGR);
+		Graphics2D g = (Graphics2D)img.getGraphics();
+		g.drawImage(res, 0, 0, null);
 		
-		try {
-			tiles = ImageIO.read(new File("res/"+s+"/tiles.png"));
-			sprites = ImageIO.read(new File("res/"+s+"/sprites.png"));
-			palettes = ImageIO.read(new File("res/palettes.png"));
-		} catch (IOException e) {
-			System.err.println("Couldn't load spritesheets!");
-			e.printStackTrace();
-		}
+		return img;
 	}
 	
 	public void setPalettes() {
