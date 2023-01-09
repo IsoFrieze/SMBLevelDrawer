@@ -470,7 +470,7 @@ public class LevelTileBuilder {
 				if (specialPlatform == SpecialPlatform.GREEN_CANNON) { // bullet bill cannon
 					renderTile(column, y, Tile.BULLET_CANNON);
 					if (length > 1) renderTile(column, y + 1, Tile.BULLET_SKULL);
-					for (int i = 2; i < length && y + i <= 12; i++)
+					for (int i = 2; i < length; i++)
 						renderUnderPart(column, y + i, Tile.BULLET_SHAFT);
 					
 				} else if (specialPlatform == SpecialPlatform.ORANGE_MUSHROOM) {
@@ -524,12 +524,12 @@ public class LevelTileBuilder {
 			} else if (id == 5) { // brick column
 				Tile tile =  type == LevelType.UNDERWATER ? Tile.CORAL :
 					type == LevelType.OVERWORLD ? Tile.BRICK_SHINY : Tile.BRICK_DULL;
-				for (int i = 0; i < length && y + i <= 12; i++) renderTile(column, y + i, tile);
+				for (int i = 0; i < length; i++) renderTile(column, y + i, tile);
 				
 			} else if (id == 6) { // square block column
 				Tile tile = type == LevelType.CASTLE ? Tile.CASTLE_MASONRY :
 					type == LevelType.UNDERWATER ? Tile.SEAFLOOR : Tile.SQUARE_BLOCK;
-				for (int i = 0; i < length && y + i <= 12; i++) renderTile(column, y + i, tile);
+				for (int i = 0; i < length; i++) renderTile(column, y + i, tile);
 				
 			} else if (id == 7) { // pipe
 				boolean canEnter = memory.getBits(object.b, 0x08) == 1;
@@ -538,12 +538,12 @@ public class LevelTileBuilder {
 				
 				if (index == 1) {
 					renderTile(column, y, canEnter ? Tile.PIPE_LIP_ENTERABLE_RIGHT : Tile.PIPE_LIP_RIGHT);
-					for (int i = 1; i < length && y + i <= 12; i++) 
+					for (int i = 1; i < length; i++) 
 						renderUnderPart(column, y + i, Tile.PIPE_SHAFT_RIGHT);
 					
 				} else if (index == 2) {
 					renderTile(column, y, canEnter ? Tile.PIPE_LIP_ENTERABLE_LEFT : Tile.PIPE_LIP_LEFT);
-					for (int i = 1; i < length && y + i <= 12; i++) 
+					for (int i = 1; i < length; i++) 
 						renderUnderPart(column, y + i, Tile.PIPE_SHAFT_LEFT);		
 					
 					// piranha plants in pipes only after 1-1 (except LL)
@@ -693,7 +693,7 @@ public class LevelTileBuilder {
 				int gap = memory.read8(staircasePointers[SMBLevelDrawer.game.getNum()][1] + staircase);
 				if (blocks >= 0x80) blocks = 1;
 				
-				for (int i = 0; i < blocks && gap + i <= 12; i++)
+				for (int i = 0; i < blocks; i++)
 					renderUnderPart(column, gap + i, Tile.SQUARE_BLOCK);
 				
 			} else if (id == 4) { // ending L pipe
@@ -724,11 +724,11 @@ public class LevelTileBuilder {
 				
 			} else if (id == 6 && laterObjectsLoaded) { // upside-down pipe with Y=1
 				if (index == 1) {
-					for (int i = 1; i < length && i <= 12; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_RIGHT);
+					for (int i = 1; i < length; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_RIGHT);
 					if (length <= 12) renderTile(column, length, Tile.PIPE_LIP_RIGHT);
 					
 				} else if (index == 2) {
-					for (int i = 1; i < length && i <= 12; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_LEFT);
+					for (int i = 1; i < length; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_LEFT);
 					if (length <= 12) renderTile(column, length, Tile.PIPE_LIP_LEFT);
 					
 					addDisplayComboSprite(Sprite.UPSIDE_DOWN_RED_PIRANHA_PLANT, x, length + 1);
@@ -736,11 +736,11 @@ public class LevelTileBuilder {
 				
 			} else if (id == 7 && laterObjectsLoaded) { // upside-down pipe with Y=4
 				if (index == 1) {
-					for (int i = 4; i < length + 3 && i <= 12; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_RIGHT);
+					for (int i = 4; i < length + 3; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_RIGHT);
 					if (length + 3 <= 12) renderTile(column, length + 3, Tile.PIPE_LIP_RIGHT);
 					
 				} else if (index == 2) {
-					for (int i = 4; i < length + 3 && i <= 12; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_LEFT);
+					for (int i = 4; i < length + 3; i++) renderUnderPart(column, i, Tile.PIPE_SHAFT_LEFT);
 					if (length + 3 <= 12) renderTile(column, length + 3, Tile.PIPE_LIP_LEFT);
 					
 					addDisplayComboSprite(Sprite.UPSIDE_DOWN_RED_PIRANHA_PLANT, x, length + 4);
@@ -760,6 +760,8 @@ public class LevelTileBuilder {
 	
 	// routine copied from the games that determines which tiles have priority over others
 	private void renderUnderPart(Tile[] column, int i, Tile tile) {
+		if (i < 0 || i >= column.length) return;
+		
 		// if the spot is empty, write the tile
 		if (column[i] == null) {
 			column[i] = tile;
@@ -790,8 +792,8 @@ public class LevelTileBuilder {
 	
 	// center tiles of trees/mushrooms/long clouds are never overwritten
 	private void renderTile(Tile[] column, int i, Tile tile) {
-		if (column[i] != Tile.TREE_MIDDLE && column[i] != Tile.MUSHROOM_MIDDLE &&
-				column[i] != Tile.LONG_CLOUD_MIDDLE)
+		if (i >= 0 && i < column.length && column[i] != Tile.TREE_MIDDLE &&
+				column[i] != Tile.MUSHROOM_MIDDLE && column[i] != Tile.LONG_CLOUD_MIDDLE)
 			column[i] = tile;
 	}
 	
