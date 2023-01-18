@@ -82,7 +82,7 @@ public class LevelSpriteBuilder {
 	// 2) create a technical list of all sprites in the level for verbose markers
 	// 3) return the width of the level (position of last sprite)
 	public int build() {
-		// offset into the sprite data
+		// offset into the sprite data (lower 8 bits offset, upper bits number of times looped)
 		int offset = 0;
 		
 		// the current screen we are on
@@ -94,12 +94,11 @@ public class LevelSpriteBuilder {
 		// flag if a screen jump was just used
 		// used so that a screen jump with a next screen flag doesn't skip 2 screens
 		boolean screenJump = false;
-		
-		//TODO looping offset
-		while (offset < 0x100 && memory.read8(dataBasePointer + offset) != 0xFF) {
-			int a = memory.read8(dataBasePointer + offset);
+
+		while (offset < 0x200 && memory.read8(dataBasePointer + (0xFF & offset)) != 0xFF) {
+			int a = memory.read8(dataBasePointer + (0xFF & offset));
 			offset++;
-			int b = memory.read8(dataBasePointer + offset);
+			int b = memory.read8(dataBasePointer + (0xFF & offset));
 			offset++;
 			
 			// get sprite position data
@@ -129,7 +128,7 @@ public class LevelSpriteBuilder {
 				
 			} else if (yPos == 14) {
 				// level transition
-				int c = memory.read8(dataBasePointer + offset);
+				int c = memory.read8(dataBasePointer + (0xFF & offset));
 				offset++;
 				
 				int levelId = memory.getBits(b, 0x7F);

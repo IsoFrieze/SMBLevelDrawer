@@ -202,7 +202,7 @@ public class LevelTileBuilder {
 	public int build(int minWidth) {
 		int[] terrain = processLevelHeader();
 		
-		// offset into the tile data
+		// offset into the tile data (lower 8 bits offset, upper bits number of times looped)
 		int offset = 0;
 
 		// the current X position we are at, in tile columns
@@ -221,11 +221,11 @@ public class LevelTileBuilder {
 		int BUFFER_SIZE = 16;
 		int endBuffer = BUFFER_SIZE;
 
-		// TODO looping offset
-		while (offset < 0x100 && endBuffer >= 0) {
-			// keep drawing the level a few tiles past the last object
+		while (endBuffer >= 0) {
+			// keep drawing the level a few tiles past the last object (or level has looped twice)
 			// even further if there are sprites out there
-			if (memory.read8(dataBasePointer + offset) == 0xFD && queue.isEmpty() && xExtent >= minWidth)
+			if (((memory.read8(dataBasePointer + (0xFF & offset)) == 0xFD && queue.isEmpty()) ||
+					(offset >= 0x200)) && xExtent >= minWidth)
 				endBuffer--;
 			
 			// start with an empty column of tiles, and fill it in as we go
@@ -244,10 +244,11 @@ public class LevelTileBuilder {
 				}
 				
 				// skip ahead to the next object with the next screen flag set
-				while (memory.read8(dataBasePointer + offset) != 0xFD && // while not end of data
-					memory.readBits(dataBasePointer + offset + 1, 0x80) == 0 && // while not next screen
-						!(memory.readBits(dataBasePointer + offset, 0x0F) == 13 && // while not screen jump
-						memory.readBits(dataBasePointer + offset + 1, 0x40) == 0)) {
+				while (offset < 0x200 && // while not looped twice
+					memory.read8(dataBasePointer + (0xFF & offset)) != 0xFD && // while not end of data
+					memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x80) == 0 && // while not next screen
+						!(memory.readBits(dataBasePointer + (0xFF & offset), 0x0F) == 13 && // while not screen jump
+						memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x40) == 0)) {
 					
 					// add this object to the list
 					addObjectToList((xExtent / 0x10) - 1, offset);
@@ -267,21 +268,22 @@ public class LevelTileBuilder {
 				queue.removeDummies();
 				
 				// if the next tile object is a screen jump 
-				if (memory.read8(dataBasePointer + offset) != 0xFD &&
-						memory.readBits(dataBasePointer + offset, 0x0F) == 13 &&
-						memory.readBits(dataBasePointer + offset + 1, 0x40) == 0) {
+				if (offset < 0x200 &&
+						memory.read8(dataBasePointer + (0xFF & offset)) != 0xFD &&
+						memory.readBits(dataBasePointer + (0xFF & offset), 0x0F) == 13 &&
+						memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x40) == 0) {
 					
 					// if this screen jump has the next screen flag set, it doesn't actually jump screens
 					// it actually locks up this screen
-					if (memory.readBits(dataBasePointer + offset + 1, 0x80) == 1) {
-						addObjectToList(memory.readBits(dataBasePointer + offset + 1, 0x1F), offset);
+					if (memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x80) == 1) {
+						addObjectToList(xExtent / 0x10, offset);
 						stuckOnNextScreenScreenJump = true;
 						
 					// otherwise it does screen jump
 					// determine if the screen we are on is jumped over or not
 					} else {
 						int currentScreen = xExtent >> 4;
-						int jumpTo = memory.readBits(dataBasePointer + offset + 1, 0x1F);
+						int jumpTo = memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x1F);
 						
 						if (currentScreen == jumpTo) {
 							// we are at the target screen, so we can finally skip this object
@@ -295,7 +297,7 @@ public class LevelTileBuilder {
 							while (memory.read8(dataBasePointer) != 0xFD && jumpTo < currentScreen) {
 								addObjectToList(jumpTo, offset);
 								offset += 2;
-								if (memory.readBits(dataBasePointer + offset + 1, 0x80) == 1)
+								if (memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x80) == 1)
 									jumpTo++;
 							}
 						}
@@ -308,13 +310,14 @@ public class LevelTileBuilder {
 			}
 			
 			// add objects to the queue
-			while (memory.read8(dataBasePointer + offset) != 0xFD && // while not at the end of data
-					!(memory.readBits(dataBasePointer + offset, 0x0F) == 13 && // while not a screen jump object
-					memory.readBits(dataBasePointer + offset + 1, 0x40) == 0) &&
-					memory.readBits(dataBasePointer + offset, 0xF0) == (xExtent & 0x0F)) { // while on this column
+			while (offset < 0x200 && // while not looped twice
+					memory.read8(dataBasePointer + (0xFF & offset)) != 0xFD && // while not at the end of data
+					!(memory.readBits(dataBasePointer + (0xFF & offset), 0x0F) == 13 && // while not a screen jump object
+					memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x40) == 0) &&
+					memory.readBits(dataBasePointer + (0xFF & offset), 0xF0) == (xExtent & 0x0F)) { // while on this column
 				
 				// don't add objects if this object has the correct X value, but is on the next screen
-				if (memory.readBits(dataBasePointer + offset + 1, 0x80) == 1 && !processNextScreenObject) break;
+				if (memory.readBits(dataBasePointer + (0xFF & (offset + 1)), 0x80) == 1 && !processNextScreenObject) break;
 				
 				processNextScreenObject = false;
 				
@@ -848,8 +851,8 @@ public class LevelTileBuilder {
 	}
 
 	private TileObject addObjectToList(int screen, int offset) {
-		int a = memory.read8(dataBasePointer + offset);
-		int b = memory.read8(dataBasePointer + offset + 1);
+		int a = memory.read8(dataBasePointer + (0xFF & offset));
+		int b = memory.read8(dataBasePointer + (0xFF & (offset + 1)));
 		int x = memory.getBits(a, 0xF0);
 		int y = memory.getBits(a, 0x0F);
 		int fullXPosition = 0x10 * screen + x;
