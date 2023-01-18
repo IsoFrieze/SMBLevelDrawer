@@ -143,6 +143,13 @@ The width of the generated output file in screens (256 pixel increments).
 Default will draw the entire level, with some buffer at the end.
 
 
+## Zoom
+
+`-zoom <scale>`
+
+An integer (1, 2, 3, etc.) to scale the final image by.
+
+
 ## Verbose Data
 
 `-verbose-tiles`

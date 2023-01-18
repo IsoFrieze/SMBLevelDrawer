@@ -249,7 +249,7 @@ public class SMBLevelDrawer {
 		
 		// create the final image
 		int imageHeight = ((LevelTileBuilder.VERBOSE_TILES || LevelSpriteBuilder.VERBOSE_SPRITES) ? 17 : 14);
-		BufferedImage finalImage = new BufferedImage(16 * levelWidth, 16 * imageHeight, BufferedImage.TYPE_4BYTE_ABGR);
+		BufferedImage finalImage = new BufferedImage(ZOOM * 16 * levelWidth, ZOOM * 16 * imageHeight, BufferedImage.TYPE_4BYTE_ABGR);
 		Graphics2D g = (Graphics2D)finalImage.getGraphics();
 		if (TILES) g.drawImage(tileImage, 0, 0, null);
 		if (SPRITES) g.drawImage(spriteImage, 0, 0, null);
@@ -742,7 +742,7 @@ public class SMBLevelDrawer {
 			{{0x42},{0x01,0x25},{},{}},
 			{{0x42},{0x42},{},{0x65,0x65,0x02,0x65}}
 		},
-		// VSSMB TODO double check these
+		// VSSMB
 		{
 			{{0x42},{0x40,0x42,0x25},{},{}},
 			{{0x2B,0x42},{0x03,0x25},{},{}},

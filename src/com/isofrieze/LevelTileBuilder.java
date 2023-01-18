@@ -419,6 +419,7 @@ public class LevelTileBuilder {
 					renderTile(column, y, Tile.USED_BLOCK);
 					
 				} else if (kind == 15) { // springboard
+					renderTile(column, y, null);
 					renderTile(column, y + 1, Tile.SPRING_BASE);
 
 					Sprite spring = Sprite.RED_SPRINGBOARD;
@@ -499,7 +500,7 @@ public class LevelTileBuilder {
 						} 
 					}
 				} else { // green tree
-					if (x == object.x) {
+					if (x == object.x && x > 0) {
 						renderTile(column, y, Tile.TREE_LEFT);
 					} else if (index == 1) {
 						renderTile(column, y, Tile.TREE_RIGHT);
@@ -547,7 +548,7 @@ public class LevelTileBuilder {
 						renderUnderPart(column, y + i, Tile.PIPE_SHAFT_LEFT);		
 					
 					// piranha plants in pipes only after 1-1 (except LL)
-					if (SMBLevelDrawer.MY_WORLD > 1 || SMBLevelDrawer.MY_LEVEL > 1 ||
+					if (SMBLevelDrawer.MY_WORLD != 1 || SMBLevelDrawer.MY_LEVEL != 1 ||
 						SMBLevelDrawer.game == Game.LOST_LEVELS)
 							addDisplayComboSprite(SMBLevelDrawer.game == Game.LOST_LEVELS && SMBLevelDrawer.MY_WORLD >= 4 ?
 								Sprite.RED_PIRANHA_PLANT : Sprite.GREEN_PIRANHA_PLANT, x, y - 1);	
@@ -1110,13 +1111,20 @@ public class LevelTileBuilder {
 		for (int i = 0; i < displayedTiles.size(); i++) {
 			SMBLevelDrawer.ssm.drawTile(g, displayedTiles.get(i));
 		}
+
+		int z = SMBLevelDrawer.ZOOM;
+		BufferedImage zoomed = new BufferedImage(z * img.getWidth(), z * img.getHeight(),
+				BufferedImage.TYPE_4BYTE_ABGR);
+		g = (Graphics2D)zoomed.getGraphics();
+		g.drawImage(img, 0, 0, zoomed.getWidth(), zoomed.getHeight(), null);
+		img = zoomed;
 		
 		if (VERBOSE_TILES) {
 			g.setColor(Color.RED);
 			for (int i = 0; i < tileObjectList.size(); i++) {
 				TileObject t = tileObjectList.get(i);
-				g.drawRect(0x10*t.x+4, 0x10*(t.y+1)+4, 8, 8);
-				g.drawString(t.data, 0x10*t.x+12, 0x10*(t.y+1)+4);
+				g.drawRect(z*(0x10*t.x+4), z*(0x10*(t.y+1)+4), z*8, z*8);
+				g.drawString(t.data, z*(0x10*t.x+12), z*(0x10*(t.y+1)+4));
 			}
 		}
 		

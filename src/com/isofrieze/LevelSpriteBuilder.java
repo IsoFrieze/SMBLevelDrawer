@@ -327,13 +327,20 @@ public class LevelSpriteBuilder {
 		for (int i = 0; i < displayedSprites.size(); i++) {
 			SMBLevelDrawer.ssm.drawSprite(g, displayedSprites.get(i));
 		}
+
+		int z = SMBLevelDrawer.ZOOM;
+		BufferedImage zoomed = new BufferedImage(z * img.getWidth(), z * img.getHeight(),
+				BufferedImage.TYPE_4BYTE_ABGR);
+		g = (Graphics2D)zoomed.getGraphics();
+		g.drawImage(img, 0, 0, zoomed.getWidth(), zoomed.getHeight(), null);
+		img = zoomed;
 		
 		if (VERBOSE_SPRITES) {
 			g.setColor(Color.YELLOW);
 			for (int i = 0; i < spriteList.size(); i++) {
 				SpriteObject t = spriteList.get(i);
-				g.drawRect(0x10*t.x+4, 0x10*t.y+4, 8, 8);
-				g.drawString(t.data, 0x10*t.x+12, 0x10*t.y+4);
+				g.drawRect(z*(0x10*t.x+4), z*(0x10*t.y+4), z*8, z*8);
+				g.drawString(t.data, z*(0x10*t.x+12), z*(0x10*t.y+4));
 			}
 		}
 		
